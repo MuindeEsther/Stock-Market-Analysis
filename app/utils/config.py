@@ -1,9 +1,3 @@
-# config.py
-"""
-Configuration file for stock market analysis dashboard.
-Contains constants, ticker lists, and global settings.
-"""
-
 # Kenyan & global watchlist
 TICKERS = {
     "Kenya Market Index (NSE20)": "^NSE20",

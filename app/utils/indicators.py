@@ -1,9 +1,3 @@
-# indicators.py
-"""
-Technical indicators module for stock market analysis.
-Contains functions to calculate various technical analysis indicators.
-"""
-
 import pandas as pd
 import numpy as np
 from .config import INDICATOR_PARAMS, TRADING_DAYS_PER_YEAR
