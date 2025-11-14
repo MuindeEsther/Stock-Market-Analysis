@@ -118,7 +118,7 @@ col2.metric("24h Change %", f"{summary.get('Change_Percent'):.2f}%", delta=None)
 col3.metric("Total Return (period)", f"{summary.get('Total_Return'):.2f}%")
 col4.metric("Volatility (ann.)", f"{summary.get('Volatility'):.2f}" if summary.get('Volatility') is not None else "N/A")
 
-# Fundamental
+# Fundamentals
 with st.expander("Fundamentals (Yahoo)"):
     fundamentals = get_fundamentals(selected_symbol)
     if fundamentals:
@@ -126,6 +126,75 @@ with st.expander("Fundamentals (Yahoo)"):
     else:
         st.write("No fundamentals available.")
 
+# Charts (price + indicators)
 
+st.subheader("Price Chart & Technical Indicators")
+fig_price = charts.plot_price_chart(df, f"{selected_name} ({selected_symbol})") # compare_nse=compare_nse)
+st.plotly_chart(fig_price, use_container_width=True)
 
+st.subheader("Volume")
+fig_vol = charts.plot_volume_chart(df, f"{selected_name} ({selected_symbol})")
+st.plotly_chart(fig_vol, use_container_width=True)
+
+# Alerts
+st.subheader("🚨 Alerts")
+alert_list = alerts.generate_all_alerts(df, selected_name)
+if alert_list:
+    for a in alert_list:
+         # choose severity visualization
+        if a.startswith("🚀") or a.startswith("📈"):
+            st.success(a)
+        elif a.startswith("⚠️") or a.startswith("📉"):
+             st.error(a)
+        else:
+            st.info(a)
+else:
+    st.write("No alerts at this time.")
+    
+# Cmparison panel (watchlist & NSE)
+
+st.subheader("📋 Comparative Performance")
+
+# Build comparsion dict from session watchlist 
+watchlist_names = st.session_state.watchlist
+watchlist_dict = {name: config.TICKERS.get(name, names) for name in watchlist_names if config.TICKERS.get(name, None) is not None}
+
+with st.spinner("Loading watchlist data..."):
+    watchlist_data = load_multiple_watchlist(watchlist_dict, period=period, interval=interval)
+    
+# Cumulative returns plot
+if watchlist_data:
+    fig_cum = charts.plot_cumulative_returns(watchlist_data, title="Cumulative Returns Comparison")
+    st.plotly_chart(fig_cum, use_container_width=True)
+else:
+    st.write("No watchlist data available for comparison.")
+    
+# NSE special comparison
+if compare_nse:
+    st.subheader("NSE vs Global Index Comparison")
+    # try to fetch NSE index (^NSE20) and S&P 500 (^GSPC)
+    nse_symbol = config.TICKERS.get("Kenya Market Index (NSE20)") or config.TICKERS.get("Nairobi Securities Exchange")
+    sp_symbol = config.TICKERS.get("S&P 500") or "^GSPC"
+    try:
+        nse_df = load_ticker_data(nse_symbol, period=period, interval=interval)
+        sp_df = load_ticker_data(sp_symbol, period=period, interval=interval)
+        # Prepare simple cumulative return serires
+        def cumulative_from_close(d):
+            s = d["Close"].pct_change().fillna(0) + 1
+            return s.cumprod() - 1
+        if nse_df is not None and not nse_df.empty and sp_df is not None and not sp_df.empty:
+            comp_dict = {
+                "NSE20": nse_df.assign(Cumulative_Return=cumulative_from_close(nse_df))['Cumulative_Return'],
+                "S&P 500": sp_df.assign(Cumulative_Return=cumulative_from_close(sp_df))['Cumulative_Return']
+            }
+            # Convert to DataFrame
+            comp_dfs = {k: d.to_frame(name='Cumulative_Return') if isinstance(d, pd.Series) else d for k, d in comp_dict.items()}
+            # Reformat to DataFrame map like other functions
+            comp_plot_map = {}
+            for k, series in comp_dfs.items():
+                if isinstance(series, pd.DataFrame) and 'Cumulative_Return' in series.columns:
+                    tmp_df = pd.DataFrame({'Cumulative_Return': series['Cumulative_Return']})
+                    tmp_df.index = nse_df.index if k == "NSE20" else sp_df.index
+                    comp_plot_map[k] = tmp_df
+    
         
