@@ -194,7 +194,31 @@ if compare_nse:
             for k, series in comp_dfs.items():
                 if isinstance(series, pd.DataFrame) and 'Cumulative_Return' in series.columns:
                     tmp_df = pd.DataFrame({'Cumulative_Return': series['Cumulative_Return']})
-                    tmp_df.index = nse_df.index if k == "NSE20" else sp_df.index
+                    tmp_df.index = nse_df.inde if k == "NSE20" else sp_df.index
                     comp_plot_map[k] = tmp_df
+                    
+            # plot
+            st.plotly_chart(charts.plot_cumulative_returns(comp_plot_map, title="NSE20 vs S&P 500 Cumulative Returns"), use_container_width=True)
+        else:
+            st.info("NSE or S&P 500 data not available for comparison.")
+    except Exception as e:
+        logger.error("Error loading NSE or S&P 500 data for comparison.", exc_info=e)
+        st.error("Failed to load NSE or S&P 500 data for comparison.")
+        
+# Footer / debug info
+
+st.markdown("---")
+st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Data provided by Yahoo Finance | Built with Streamlit""")
+
+# Developer panel
+with st.expander("Developer Panel"):
+    st.write("Selected symbol:", selected_symbol)
+    st.write("Data sample:")
+    st.dataframe(df.tail().reset_index())
+    st.write("Columnns:", df.columns.tolist())
+    
+           
+           
+           
     
         
