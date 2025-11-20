@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_data(Ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
+def get_data(ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
     """
     Fetch stock data with optional technical indicators.
     
@@ -23,23 +23,23 @@ def get_data(Ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_i
         pd.DataFrame: Stock data with OHLCV and optional indicators
     """
     try:
-        logger.info(f"Fetching data for {Ticker}...")
-        # Checker if ticker is a list
-
-        is_multiple = isinstance(Ticker, list)
-        data = yf.download(Ticker, period=period, interval=interval, progress=False)
+        # Ensure ticker is a string, not a list
+        if isinstance(ticker, list):
+            logger.error("get_data() accepts a single ticker string, not a list.")
+            return None
+        
+        logger.info(f"Fetching data for {ticker}...")
+        data = yf.download(ticker, period=period, interval=interval, progress=False)
 
         if data.empty:
-            logger.warning(f"No data returned for {Ticker}")
+            logger.warning(f"No data returned for {ticker}")
             return None
         
         data.dropna(inplace=True)
 
-        # Handle multiple tickers - data has MultiIndex columns
-        if is_multiple and isinstance(data.columns, pd.MultiIndex):
-            logger.warning("Multiple tickers detected. Indicators not supported for multi-ticker download.")
-            logger.info(f"Successfully fetched {len(data)} rows for {Ticker}")
-            return data
+        if isinstance(data.columns, pd.MultiIndex):
+            # Extract the first level of column names
+            data.columns = data.columns.get_level_values(0)
         
         # Add basic return calculation
         data['Daily_Return'] = data['Close'].pct_change()
@@ -48,15 +48,15 @@ def get_data(Ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_i
         if include_indicators and len(data) > 0:
             data = add_technical_indicators(data)
         
-        logger.info(f"Successfully fetched {len(data)} rows for {Ticker}")
+        logger.info(f"Successfully fetched {len(data)} rows for {ticker}")
         return data
         
     except Exception as e:
-        logger.error(f"Error fetching data for {Ticker}: {str(e)}")
+        logger.error(f"Error fetching data for {ticker}: {str(e)}")
         return None
 
 
-def get_fundamentals(Ticker):
+def get_fundamentals(ticker):
     """
     Fetch fundamental data for a stock.
     
@@ -67,7 +67,7 @@ def get_fundamentals(Ticker):
         dict: Fundamental metrics
     """
     try:
-        stock = yf.Ticker(Ticker)
+        stock = yf.Ticker(ticker)
         info = stock.info
         
         fundamentals = {
@@ -90,15 +90,15 @@ def get_fundamentals(Ticker):
             'Revenue_Growth': info.get('revenueGrowth')
         }
         
-        logger.info(f"Successfully fetched fundamentals for {Ticker}")
+        logger.info(f"Successfully fetched fundamentals for {ticker}")
         return fundamentals
         
     except Exception as e:
-        logger.error(f"Error fetching fundamentals for {Ticker}: {str(e)}")
+        logger.error(f"Error fetching fundamentals for {ticker}: {str(e)}")
         return None
 
 
-def get_multiple_tickers(Tickers, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
+def get_multiple_tickers(tickers_dict, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
     """
     Fetch data for multiple tickers.
     
@@ -111,12 +111,12 @@ def get_multiple_tickers(Tickers, period=DEFAULT_PERIOD, interval=DEFAULT_INTERV
     Returns:
         dict: Dictionary of DataFrames keyed by ticker name
     """
-    if Tickers is None:
-        Tickers = TICKERS
+    if tickers_dict is None:
+        tickers_dict = TICKERS
     
     data_dict = {}
     
-    for name, symbol in Tickers.items():
+    for name, symbol in tickers_dict.items():
         data = get_data(symbol, period, interval, include_indicators)
         if data is not None:
             data_dict[name] = data
