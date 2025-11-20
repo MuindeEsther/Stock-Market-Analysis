@@ -71,8 +71,12 @@ def add_bollinger_bands(data, period=None, std_multiplier=None):
         std_multiplier = INDICATOR_PARAMS['BOLLINGER_STD']
     
     df = data.copy()
+    close = df['Close']
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    
     df['BB_Middle'] = df['Close'].rolling(window=period).mean()
-    bb_std = df['Close'].rolling(window=period).std()
+    bb_std = close.rolling(window=period).std()
     df['BB_Upper'] = df['BB_Middle'] + (bb_std * std_multiplier)
     df['BB_Lower'] = df['BB_Middle'] - (bb_std * std_multiplier)
     df['BB_Width'] = df['BB_Upper'] - df['BB_Lower']
