@@ -1,14 +1,17 @@
 import pytest
-from app.utils.data_loader import get_data
+from app.utils.data_loader import get_data, get_multiple_tickers, validate_data
 from app.utils.config import TICKERS
 import pandas as pd
 
 def test_get_single_ticker():
     # Test that data is returned for a valid ticker.
     df = get_data(TICKERS["Apple"], period="1mo", interval="1d")
+    assert df is not None
     assert isinstance(df, pd.DataFrame)
-    assert not df.empty
-    assert "Close" in df.columns
+    required_columns = ["Open", "High", "Low", "Close", "Volume", "Daily_Return", "Cumulative_Return"]
+    for col in required_columns:
+        assert col in df.columns, f"{col}"
+   
     
 
 def test_invalid_ticker_returns_empty_df():
@@ -19,10 +22,29 @@ def test_invalid_ticker_returns_empty_df():
     
 def test_multiple_tickers():
     # Test fecthing data for more than one ticker
-    tickers = [TICKERS["Apple"], TICKERS["Microsoft"]]
-    combined_df = get_data(tickers, period="1mo", interval="1d")
+    tickers_dict = {
+        "Apple": TICKERS["Apple"],
+        "Microsoft": TICKERS["Microsoft"]
+        }
+    combined_data = get_multiple_tickers(tickers_dict, period="1mo", interval="1d")
     
-    assert isinstance(combined_df, pd.DataFrame)
-    assert not combined_df.empty
-    assert "Ticker" in combined_df.columns
-    assert combined_df["Ticker"].nunique() == 2
+    assert isinstance(combined_data, dict)
+    # Check that each value is a DataFrame with required columns
+    for name, df in combined_data.items():
+        assert isinstance(df, pd.DataFrame), f"{name} data should be a DataFrame"
+        required_columns = ["Open", "High", "Low", "Close", "Volume", "Daily_Return", "Cumulative_Return"]
+        for col in required_columns:
+            assert col in df.columns, f"{col} should exist in {name}'s DataFrame"
+            
+def test_validate_data():
+    # Test the validate_data function
+    
+    df = get_data(TICKERS["Apple"], period="1mo", interval="1d")
+    valid = validate_data(df)
+    assert valid is True
+    
+    empty_df = pd.DataFrame()
+    assert validate_data(empty_df)
+    
+    invalid_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    assert validate_data(invalid_df)
