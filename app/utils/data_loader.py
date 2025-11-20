@@ -24,13 +24,22 @@ def get_data(Ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_i
     """
     try:
         logger.info(f"Fetching data for {Ticker}...")
+        # Checker if ticker is a list
+
+        is_multiple = isinstance(Ticker, list)
         data = yf.download(Ticker, period=period, interval=interval, progress=False)
-        
+
         if data.empty:
             logger.warning(f"No data returned for {Ticker}")
             return None
         
         data.dropna(inplace=True)
+
+        # Handle multiple tickers - data has MultiIndex columns
+        if is_multiple and isinstance(data.columns, pd.MultiIndex):
+            logger.warning("Multiple tickers detected. Indicators not supported for multi-ticker download.")
+            logger.info(f"Successfully fetched {len(data)} rows for {Ticker}")
+            return data
         
         # Add basic return calculation
         data['Daily_Return'] = data['Close'].pct_change()
