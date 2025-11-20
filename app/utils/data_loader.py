@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_data(ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
+def get_data(Ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
     """
     Fetch stock data with optional technical indicators.
     
@@ -23,11 +23,11 @@ def get_data(ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_i
         pd.DataFrame: Stock data with OHLCV and optional indicators
     """
     try:
-        logger.info(f"Fetching data for {ticker}...")
-        data = yf.download(ticker, period=period, interval=interval, progress=False)
+        logger.info(f"Fetching data for {Ticker}...")
+        data = yf.download(Ticker, period=period, interval=interval, progress=False)
         
         if data.empty:
-            logger.warning(f"No data returned for {ticker}")
+            logger.warning(f"No data returned for {Ticker}")
             return None
         
         data.dropna(inplace=True)
@@ -39,15 +39,15 @@ def get_data(ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_i
         if include_indicators and len(data) > 0:
             data = add_technical_indicators(data)
         
-        logger.info(f"Successfully fetched {len(data)} rows for {ticker}")
+        logger.info(f"Successfully fetched {len(data)} rows for {Ticker}")
         return data
         
     except Exception as e:
-        logger.error(f"Error fetching data for {ticker}: {str(e)}")
+        logger.error(f"Error fetching data for {Ticker}: {str(e)}")
         return None
 
 
-def get_fundamentals(ticker):
+def get_fundamentals(Ticker):
     """
     Fetch fundamental data for a stock.
     
@@ -58,7 +58,7 @@ def get_fundamentals(ticker):
         dict: Fundamental metrics
     """
     try:
-        stock = yf.Ticker(ticker)
+        stock = yf.Ticker(Ticker)
         info = stock.info
         
         fundamentals = {
@@ -81,15 +81,15 @@ def get_fundamentals(ticker):
             'Revenue_Growth': info.get('revenueGrowth')
         }
         
-        logger.info(f"Successfully fetched fundamentals for {ticker}")
+        logger.info(f"Successfully fetched fundamentals for {Ticker}")
         return fundamentals
         
     except Exception as e:
-        logger.error(f"Error fetching fundamentals for {ticker}: {str(e)}")
+        logger.error(f"Error fetching fundamentals for {Ticker}: {str(e)}")
         return None
 
 
-def get_multiple_tickers(tickers_dict=None, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
+def get_multiple_tickers(Tickers, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL, include_indicators=True):
     """
     Fetch data for multiple tickers.
     
@@ -102,12 +102,12 @@ def get_multiple_tickers(tickers_dict=None, period=DEFAULT_PERIOD, interval=DEFA
     Returns:
         dict: Dictionary of DataFrames keyed by ticker name
     """
-    if tickers_dict is None:
-        tickers_dict = TICKERS
+    if Tickers is None:
+        Tickers = TICKERS
     
     data_dict = {}
     
-    for name, symbol in tickers_dict.items():
+    for name, symbol in Tickers.items():
         data = get_data(symbol, period, interval, include_indicators)
         if data is not None:
             data_dict[name] = data
