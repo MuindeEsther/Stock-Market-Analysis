@@ -20,8 +20,7 @@ def test_get_single_ticker():
 def test_invalid_ticker_returns_empty_df():
     # Test behavior when ticker does not exist
     df = get_data("INVALID1234")
-    assert isinstance(df, pd.DataFrame)
-    assert df.empty or "Close" in df.columns 
+    assert df is None, "Invalid ticker should return None"
     
 def test_multiple_tickers():
     # Test fecthing data for more than one ticker
@@ -55,10 +54,8 @@ def test_validate_data():
 
     # Test with DataFrame missing required columns
     invalid_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    assert validate_data(invalid_df) is False, "DataFrame without required columns"
+    assert validate_data(invalid_df) is False, "DataFrame without required columns should fail validation"
     
-    invalid_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    assert validate_data(invalid_df)
 
     # Test with DataFrame having required columns but insufficient data
     insufficient_df = pd.DataFrame({
