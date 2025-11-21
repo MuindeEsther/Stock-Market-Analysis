@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from utils.config import TRADING_DAYS_PER_YEAR
+from app.utils.config import TRADING_DAYS_PER_YEAR
 
 logger = logging.getLogger(__name__)
 

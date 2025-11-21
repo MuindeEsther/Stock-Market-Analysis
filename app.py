@@ -1,14 +1,12 @@
 import streamlit as st
 import pandas as pd
 import logging
-import time
 from datetime import datetime
 
 # Local import (placeholder for actual local module)
 from app.utils import config
 from app.utils.data_loader import get_data, get_multiple_tickers, get_fundamentals
 from app.components import charts, alerts
-from app.utils import indicators # as indicators_module
 from app.components import metrics as metrics_module
 
 # Set up logging

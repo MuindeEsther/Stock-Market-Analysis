@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 # Kenyan & global watchlist
 TICKERS = {
     "Kenya Market Index (NSE20)": "^NSE20",
@@ -36,3 +38,17 @@ INDICATOR_PARAMS = {
 # Logging configuration
 LOG_LEVEL = "INFO"
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+
+# Page configuration
+PAGE_TITLE = "📈 Global & Kenyan Market Dashboard"
+PAGE_ICON = "📊"
+
+# Cache TTL (time-to-live) for streamlit cache
+CACHE_TTL = timedelta(hours=1)
+
+# UI Messages
+MESSAGES = {
+    "loading": "Loading data...",
+    "no_data": "No data available"
+}
