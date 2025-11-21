@@ -5,11 +5,11 @@ import time
 from datetime import datetime
 
 # Local import (placeholder for actual local module)
-from .utils import config
-from .utils.data_loader import get_data, get_multiple_tickers, get_fundamentals
-from .components import charts, alerts
-from .utils import indicators # as indicators_module
-from .components import metrics as metrics_module
+from app.utils import config
+from app.utils.data_loader import get_data, get_multiple_tickers, get_fundamentals
+from app.components import charts, alerts
+from app.utils import indicators # as indicators_module
+from app.components import metrics as metrics_module
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format=config.LOG_FORMAT)

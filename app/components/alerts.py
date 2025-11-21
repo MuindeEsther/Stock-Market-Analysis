@@ -3,7 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def price_alerts(data: pd.DataFrames, stock_name: str, threshold: float = 0.05):
+def price_alerts(data: pd.DataFrame, stock_name: str, threshold: float = 0.05):
     
     """
     Generate price alerts when the stock price crosses a certain threshold.
