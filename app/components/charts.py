@@ -66,7 +66,7 @@ def plot_price_chart(data, ticker_name):
             mode='lines',
             name='Bollinger Lower',
             line=dict(color='lightgrey', width=1),
-            fill='tonexty', fillcolor='rgba(211,211,211,0.2'
+            fill='tonexty', fillcolor='rgba(211,211,211,0.2)'
         ))
         
     fig.update_layout(
