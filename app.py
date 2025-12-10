@@ -161,7 +161,7 @@ with st.spinner("Loading watchlist data..."):
     
 # Cumulative returns plot
 if watchlist_data:
-    fig_cum = charts.plot_cumulative_returns(watchlist_data, title="Cumulative Returns Comparison")
+    fig_cum = charts.plot_cumulative_returns(watchlist_data)
     st.plotly_chart(fig_cum, use_container_width=True)
 else:
     st.write("No watchlist data available for comparison.")
