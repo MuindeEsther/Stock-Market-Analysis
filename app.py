@@ -147,11 +147,17 @@ with overview_tab:
     if fundamentals:
         def display_value(value, key=""):
             if value in (None, "N/A", ""):
-                return "N/A"
+                return "Unavailable"
             if key == "Market_Cap" and isinstance(value, (int, float)):
-                return f"${value / 1_000_000_000:.2f}B"
+                if abs(value) >= 1_000_000_000_000:
+                    return f"${value / 1_000_000_000_000:.2f}T"
+                if abs(value) >= 1_000_000_000:
+                    return f"${value / 1_000_000_000:.2f}B"
+                if abs(value) >= 1_000_000:
+                    return f"${value / 1_000_000:.2f}M"
             if key == "Dividend_Yield" and isinstance(value, (int, float)):
-                return f"{value:.2f}%" if value < 1 else f"{value:.2f}%"
+                yield_percent = value if value > 1 else value * 100
+                return f"{yield_percent:.2f}%"
             if isinstance(value, (int, float)):
                 return f"{value:,.2f}" if key != "Dividend_Rate" else f"${value:,.2f}"
             return str(value)

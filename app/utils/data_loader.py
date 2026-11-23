@@ -116,8 +116,6 @@ def get_fundamentals(ticker):
         if trailing_pe is None and market_price is not None and eps not in (None, 0):
             trailing_pe = market_price / eps
 
-        forward_pe = first_value(["forwardPE", "forward_pe"])
-
         week_high = first_value(["fiftyTwoWeekHigh"] ) or fast_value("year_high")
         week_low = first_value(["fiftyTwoWeekLow"]) or fast_value("year_low")
 
@@ -132,6 +130,63 @@ def get_fundamentals(ticker):
             except Exception:
                 year_data = pd.DataFrame()
 
+        # Derive values where Yahoo fundamentals are unavailable.
+        dividend_yield = first_value(["dividendYield", "yield"])
+        dividend_rate = first_value(["dividendRate"])
+        beta = first_value(["beta"])
+
+        try:
+            if dividend_yield is None:
+                dividend_history = stock.dividends
+                if dividend_history is not None and not dividend_history.empty:
+                    trailing_dividends = dividend_history.tail(252)
+                    annual_dividend = float(trailing_dividends.sum())
+                    if market_price:
+                        dividend_yield = (annual_dividend / market_price) * 100
+                    dividend_rate = dividend_rate or annual_dividend
+        except Exception:
+            pass
+
+        if beta is None:
+            try:
+                asset_data = yf.download(ticker, period="1y", interval="1d", progress=False, auto_adjust=True)
+                market_data = yf.download("^GSPC", period="1y", interval="1d", progress=False, auto_adjust=True)
+
+                if isinstance(asset_data.columns, pd.MultiIndex):
+                    asset_data.columns = asset_data.columns.get_level_values(0)
+                if isinstance(market_data.columns, pd.MultiIndex):
+                    market_data.columns = market_data.columns.get_level_values(0)
+
+                if not asset_data.empty and not market_data.empty:
+                    asset_returns = asset_data["Close"].pct_change().dropna()
+                    market_returns = market_data["Close"].pct_change().dropna()
+                    aligned = pd.concat([asset_returns, market_returns], axis=1, join="inner").dropna()
+                    if len(aligned) > 20:
+                        covariance = aligned.iloc[:, 0].cov(aligned.iloc[:, 1])
+                        market_variance = aligned.iloc[:, 1].var()
+                        if market_variance:
+                            beta = float(covariance / market_variance)
+            except Exception:
+                pass
+
+        forward_pe = first_value(["forwardPE", "forward_pe"])
+        peg_ratio = first_value(["pegRatio"])
+        if peg_ratio is None and forward_pe not in (None, 0) and eps not in (None, 0):
+            peg_ratio = forward_pe / abs(float(eps) * 10)
+
+        price_to_book = first_value(["priceToBook", "price_to_book"])
+        if price_to_book is None:
+            try:
+                balance_sheet = stock.balance_sheet
+                if balance_sheet is not None and not balance_sheet.empty:
+                    equity_row = next((row for row in ("Stockholders Equity", "Total Stockholder Equity") if row in balance_sheet.index), None)
+                    if equity_row:
+                        equity = float(balance_sheet.loc[equity_row].dropna().iloc[0])
+                        if shares and equity:
+                            price_to_book = market_price / (equity / shares) if market_price else None
+            except Exception:
+                pass
+
         fundamentals = {
             'Name': first_value(["longName", "shortName", "name"]) or ticker,
             'Sector': first_value(["sector", "category"]) or "N/A",
@@ -139,11 +194,11 @@ def get_fundamentals(ticker):
             'Market_Cap': market_cap,
             'PE_Ratio': trailing_pe,
             'Forward_PE': forward_pe,
-            'PEG_Ratio': first_value(["pegRatio"]),
-            'Price_to_Book': first_value(["priceToBook", "price_to_book"]),
-            'Dividend_Yield': first_value(["dividendYield", "yield"]),
-            'Dividend_Rate': first_value(["dividendRate"]),
-            'Beta': first_value(["beta"]),
+            'PEG_Ratio': peg_ratio,
+            'Price_to_Book': price_to_book,
+            'Dividend_Yield': dividend_yield,
+            'Dividend_Rate': dividend_rate,
+            'Beta': beta,
             'EPS': eps,
             '52_Week_High': week_high,
             '52_Week_Low': week_low,
