@@ -84,16 +84,42 @@ def get_fundamentals(ticker):
 
         def fast_value(key):
             try:
-                return fast.get(key)
+                if hasattr(fast, "get"):
+                    value = fast.get(key)
+                    if value not in (None, ""):
+                        return value
+                return getattr(fast, key, None)
             except Exception:
                 return None
 
-        year_data = yf.download(ticker, period="1y", interval="1d", progress=False)
-        if isinstance(year_data.columns, pd.MultiIndex):
-            year_data.columns = year_data.columns.get_level_values(0)
+        market_price = fast_value("last_price") or fast_value("regular_market_price")
 
-        week_high = first_value(["fiftyTwoWeekHigh"])
-        week_low = first_value(["fiftyTwoWeekLow"])
+        eps = first_value(["trailingEps", "epsTrailingTwelveMonths"])
+        if eps is None:
+            try:
+                income = stock.income_stmt
+                if income is not None and not income.empty:
+                    for row in ("Diluted EPS", "Basic EPS"):
+                        if row in income.index:
+                            eps = float(income.loc[row].dropna().iloc[0])
+                            if pd.notna(eps):
+                                break
+            except Exception:
+                pass
+
+        shares = fast_value("shares")
+        market_cap = first_value(["marketCap", "market_cap"]) or fast_value("market_cap")
+        if market_cap is None and market_price is not None and shares:
+            market_cap = market_price * shares
+
+        trailing_pe = first_value(["trailingPE", "trailing_pe"])
+        if trailing_pe is None and market_price is not None and eps not in (None, 0):
+            trailing_pe = market_price / eps
+
+        forward_pe = first_value(["forwardPE", "forward_pe"])
+
+        week_high = first_value(["fiftyTwoWeekHigh"]) or fast_value("year_high")
+        week_low = first_value(["fiftyTwoWeekLow"]) or fast_value("year_low")
         if (week_high is None or week_low is None) and year_data is not None and not year_data.empty:
             week_high = week_high or float(year_data["High"].max())
             week_low = week_low or float(year_data["Low"].min())
@@ -102,15 +128,15 @@ def get_fundamentals(ticker):
             'Name': first_value(["longName", "shortName", "name"]) or ticker,
             'Sector': first_value(["sector", "category"]) or "N/A",
             'Industry': first_value(["industry", "industryDisp"]) or "N/A",
-            'Market_Cap': first_value(["marketCap", "market_cap"]) or fast_value("market_cap"),
-            'PE_Ratio': first_value(["trailingPE", "trailing_pe"]),
-            'Forward_PE': first_value(["forwardPE", "forward_pe"]),
+            'Market_Cap': market_cap,
+            'PE_Ratio': trailing_pe,
+            'Forward_PE': forward_pe,
             'PEG_Ratio': first_value(["pegRatio"]),
             'Price_to_Book': first_value(["priceToBook", "price_to_book"]),
             'Dividend_Yield': first_value(["dividendYield", "yield"]),
             'Dividend_Rate': first_value(["dividendRate"]),
             'Beta': first_value(["beta"]),
-            'EPS': first_value(["trailingEps", "epsTrailingTwelveMonths"]),
+            'EPS': eps,
             '52_Week_High': week_high,
             '52_Week_Low': week_low,
             'Average_Volume': first_value(["averageVolume", "averageVolume10days"]),
