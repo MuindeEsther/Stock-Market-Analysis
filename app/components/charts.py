@@ -66,7 +66,7 @@ def plot_price_chart(data, ticker_name):
             mode='lines',
             name='Bollinger Lower',
             line=dict(color='lightgrey', width=1),
-            fill='tonexty', fillcolor='rgba(211,211,211,0.2'
+            fill='tonexty', fillcolor='rgba(211,211,211,0.2)'
         ))
         
     fig.update_layout(
@@ -98,7 +98,7 @@ def plot_volume_chart(data, ticker_name):
     )
     return fig
 
-def plot_cumulative_returns(data_dict):
+def plot_cumulative_returns(data_dict, title="Cumulative Returns Comparison (Kenya vs Global)"):
     # Plot cumulative returns comparison between multiple tickers
     fig = go.Figure()
     
@@ -112,13 +112,52 @@ def plot_cumulative_returns(data_dict):
             ))
     
     fig.update_layout(
-        title="Cumulative Returns Comparison (Kenya vs Global)",
+        title=title,
         yaxis_title='Cumulative Return (%)',
         xaxis_title='Date',
         template='plotly_white',
         hovermode='x unified',
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
+    return fig
+
+def plot_momentum_indicators(data, ticker_name):
+    """Plot RSI, MACD, and stochastic oscillator in linked subplots."""
+    if data is None or data.empty:
+        return go.Figure()
+
+    from plotly.subplots import make_subplots
+
+    fig = make_subplots(
+        rows=3,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.06,
+        subplot_titles=("RSI", "MACD", "Stochastic Oscillator"),
+        row_heights=[0.34, 0.33, 0.33],
+    )
+
+    if 'RSI' in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, y=data['RSI'], name='RSI', line=dict(color='purple')), row=1, col=1)
+        fig.add_hline(y=70, line_dash='dash', line_color='red', row=1, col=1)
+        fig.add_hline(y=30, line_dash='dash', line_color='green', row=1, col=1)
+
+    if 'MACD' in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, y=data['MACD'], name='MACD', line=dict(color='blue')), row=2, col=1)
+        if 'MACD_Signal' in data.columns:
+            fig.add_trace(go.Scatter(x=data.index, y=data['MACD_Signal'], name='Signal', line=dict(color='orange')), row=2, col=1)
+        if 'MACD_Histogram' in data.columns:
+            fig.add_trace(go.Bar(x=data.index, y=data['MACD_Histogram'], name='Histogram', opacity=0.35), row=2, col=1)
+
+    if 'Stochastic_K' in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, y=data['Stochastic_K'], name='%K', line=dict(color='blue')), row=3, col=1)
+    if 'Stochastic_D' in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, y=data['Stochastic_D'], name='%D', line=dict(color='orange')), row=3, col=1)
+
+    fig.update_layout(title=f"{ticker_name} - Momentum Indicators", template='plotly_white', hovermode='x unified')
+    fig.update_yaxes(title_text="RSI", range=[0, 100], row=1, col=1)
+    fig.update_yaxes(title_text="MACD", row=2, col=1)
+    fig.update_yaxes(title_text="%", range=[0, 100], row=3, col=1)
     return fig
 
 def plot_correlation_heatmap(corr_matrix):
@@ -141,4 +180,3 @@ def plot_correlation_heatmap(corr_matrix):
     )
     return fig
 
-        

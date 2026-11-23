@@ -92,13 +92,12 @@ def volatility_alert(data: pd.DataFrame, stock_name: str, threshold: float = 0.0
     return alerts
 
 
-def generate_all_alerts(data: pd.DataFrame, stock_name: str):
+def generate_all_alerts(data: pd.DataFrame, stock_name: str, price_threshold: float = 0.05):
     """
     Aggregate all alert types for a given stock.
     """
     alerts = []
-    alerts.extend(price_alerts(data, stock_name))
+    alerts.extend(price_alerts(data, stock_name, threshold=price_threshold))
     alerts.extend(moving_average_crossover_alert(data, stock_name))
     alerts.extend(volatility_alert(data, stock_name))
     return alerts
-        
