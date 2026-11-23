@@ -57,7 +57,7 @@ def plot_price_chart(data, ticker_name):
             y=data['BB_Upper'],
             mode='lines',
             name='Bollinger Upper',
-            line=dict(color='lightgrey', width=1),
+            line=dict(color='black', width=1),
             fill=None
         ))
         fig.add_trace(go.Scatter(

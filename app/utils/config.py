@@ -35,6 +35,15 @@ INDICATOR_PARAMS = {
     "VOLATILITY_LONG": 50
 }
 
+KENYA_TICKERS = {
+    "EABL": "EABL",
+    "KCB": "KCB",
+    "Equity Bank": "EQTY",
+    "Safaricom": "SCOM",
+    "NSE 20 Index": "NSE20"
+}
+
+
 # Logging configuration
 LOG_LEVEL = "INFO"
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

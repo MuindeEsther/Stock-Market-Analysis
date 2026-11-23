@@ -149,3 +149,50 @@ def validate_data(data):
         return False
     
     return True
+
+def get_local_kenyan_data(ticker, include_indicators=True):
+    
+    import os
+    
+    filepath = os.path.join("data", "processed", "Kenya", f"{ticker}.csv")
+    
+    if not os.path.exists(filepath):
+        logger.error(f"Local Kenyan data file not found: {filepath}")
+        return None
+    
+    try:
+        data = pd.read_csv(filepath, parse_dates=["Date"])
+        data.set_index("Date", inplace=True)
+        
+        required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+        if not all(col in data.columns for col in required_cols):
+            logger.error(f"Kenyan data missing required columns: {required_cols}")
+            return None
+        
+        # Calculate returns
+        data['Daily_Return'] = data['Close'].pct_change()
+        data['Cumulative_Return'] = (1 + data['Daily_Return']).cumprod() - 1
+        
+        # Add indicators
+        if include_indicators:
+            data = add_technical_indicators(data)
+            
+        logger.info(f"Loaded Kenyan market data for {ticker}, rows: {len(data)}")
+        return data
+    
+    except Exception as e:
+        logger.error(f"Error loading Kenyan data for {ticker}: {str(e)}")
+        return None
+
+# Get multiple Kenyan tickers
+def get_multiple_kenyan_tickers(tickers_dict):
+    data_dict = {}
+    
+    for name, symbol in tickers_dict.items():
+        data = get_local_kenyan_data(symbol)
+        if data is not None:
+            data_dict[name] = data
+        else:
+            logger.warning(f"Skipping {name} due to missing data")
+    
+    return data_dict
