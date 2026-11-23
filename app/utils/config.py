@@ -9,7 +9,19 @@ TICKERS = {
     "S&P 500": "^GSPC",
     "NASDAQ": "^IXIC",
     "Apple": "AAPL",
-    "Microsoft": "MSFT"
+    "Microsoft": "MSFT",
+    "Tesla": "TSLA",
+    "Nvidia": "NVDA",
+    "Amazon": "AMZN",
+    "Alphabet": "GOOGL",
+    "Meta": "META",
+    "Netflix": "NFLX",
+    "Britam": "BRIT.NR",
+    "Co-op Bank": "COOP.NR",
+    "Kenya Power": "KPLC.NR",
+    "East African Breweries": "EABL.NR",
+    "Bamburi Cement": "BAMB.NR",
+    "KenGen": "KEGN.NR"
 }
 
 # Trading days per year (for annualization calculations)

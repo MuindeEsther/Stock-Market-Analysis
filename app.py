@@ -18,6 +18,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown("""
+<style>
+    :root { --text:#E5EEF7; --muted:#94A3B8; --cyan:#38BDF8; --green:#34D399; }
+    .stApp { background:linear-gradient(135deg,#080E1A 0%,#0D1727 55%,#101D30 100%); color:var(--text); }
+    section[data-testid="stSidebar"] { background:#0A1322; border-right:1px solid rgba(148,163,184,.12); }
+    section[data-testid="stSidebar"] * { color:#DCE7F3; }
+    .block-container { max-width:1440px; padding-top:1.25rem; padding-bottom:2rem; }
+    h1,h2,h3,h4,p,span,label { color:var(--text); }
+    [data-testid="stMetric"] { background:linear-gradient(145deg,#142238,#101B2E); border:1px solid rgba(148,163,184,.14); border-radius:14px; padding:18px 18px 14px; box-shadow:0 10px 28px rgba(0,0,0,.18); }
+    [data-testid="stMetricLabel"] { color:var(--muted)!important; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; }
+    [data-testid="stMetricValue"] { color:#F8FBFF!important; }
+    [aria-selected="true"][data-testid="stTab"] { border-bottom-color:var(--cyan); color:var(--cyan); }
+    [data-testid="stDataFrame"] { border:1px solid rgba(148,163,184,.12); border-radius:12px; overflow:hidden; }
+    .stPlotlyChart { background:#101A2A; border:1px solid rgba(148,163,184,.12); border-radius:14px; padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.16); }
+    .hero { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:22px 24px; margin-bottom:16px; border:1px solid rgba(56,189,248,.16); border-radius:18px; background:linear-gradient(120deg,rgba(56,189,248,.12),rgba(52,211,153,.05) 55%,rgba(17,28,46,.25)); box-shadow:0 18px 45px rgba(0,0,0,.18); }
+    .hero h1 { margin:0; font-size:2rem; letter-spacing:-.03em; }
+    .hero p { margin:.35rem 0 0; color:var(--muted); }
+    .market-status { white-space:nowrap; border:1px solid rgba(52,211,153,.28); background:rgba(52,211,153,.08); color:#86EFAC; border-radius:999px; padding:.55rem .8rem; font-size:.78rem; font-weight:700; }
+    .stDownloadButton button,.stButton button { border-radius:10px; border:1px solid rgba(56,189,248,.22); background:#122038; color:#E8F3FF; }
+    [data-testid="stAlert"] { border-radius:12px; border:1px solid rgba(148,163,184,.12); }
+</style>
+""", unsafe_allow_html=True)
 
 @st.cache_data(ttl=int(config.CACHE_TTL.total_seconds()))
 def load_ticker_data(symbol: str, period: str = config.DEFAULT_PERIOD, interval: str = config.DEFAULT_INTERVAL):
@@ -42,18 +64,33 @@ alert_threshold = st.sidebar.slider("Price alert threshold", 1.0, 15.0, 5.0, 0.5
 
 st.sidebar.markdown("### 📋 Watchlist")
 query_watchlist = st.query_params.get_all("watchlist") if hasattr(st.query_params, "get_all") else []
+valid_query_watchlist = [name for name in query_watchlist if name in config.TICKERS]
 if "watchlist" not in st.session_state:
-    st.session_state.watchlist = query_watchlist or ["Apple", "S&P 500", "Kenya Market Index (NSE20)"]
+    st.session_state.watchlist = valid_query_watchlist or ["Apple", "S&P 500", "Kenya Market Index (NSE20)"]
+
+selected_watchlist = st.sidebar.multiselect(
+    "Select watchlist assets",
+    names,
+    default=[name for name in st.session_state.watchlist if name in names],
+    key="watchlist_multiselect",
+)
+
+if st.sidebar.button("💾 Save watchlist"):
+    st.session_state.watchlist = list(selected_watchlist)
+    st.query_params["watchlist"] = selected_watchlist
+    st.success("Watchlist updated")
 
 if st.sidebar.button("➕ Add selected asset"):
     if selected_name not in st.session_state.watchlist:
         st.session_state.watchlist.append(selected_name)
         st.query_params["watchlist"] = st.session_state.watchlist
+        st.rerun()
 
 remove_name = st.sidebar.selectbox("Remove asset", ["None"] + st.session_state.watchlist, index=0)
 if st.sidebar.button("➖ Remove selected asset") and remove_name != "None":
     st.session_state.watchlist.remove(remove_name)
     st.query_params["watchlist"] = st.session_state.watchlist
+    st.rerun()
 
 if st.sidebar.button("🔄 Refresh market data"):
     st.cache_data.clear()
@@ -62,8 +99,17 @@ if st.sidebar.button("🔄 Refresh market data"):
 st.sidebar.caption("Current watchlist:")
 st.sidebar.write(", ".join(st.session_state.watchlist))
 
-st.title("📈 Global & Kenyan Market Dashboard")
-st.caption("Live prices, technical indicators, comparative performance, and data exports. Research tool — not financial advice.")
+st.markdown("""
+<div class="hero">
+  <div>
+    <h1>Global & Kenyan Market Dashboard</h1>
+    <p>Live prices · Technical intelligence · Comparative performance</p>
+  </div>
+  <div class="market-status">● DATA ONLINE</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.caption("Research tool — not financial advice.")
 
 with st.spinner(config.MESSAGES["loading"]):
     df = load_ticker_data(selected_symbol, period=period, interval=interval)
@@ -99,13 +145,48 @@ overview_tab, price_tab, analysis_tab = st.tabs(["Overview", "Price & Volume", "
 with overview_tab:
     fundamentals = get_fundamentals(selected_symbol)
     if fundamentals:
-        left, right = st.columns(2)
-        with left:
-            st.markdown("**Company / Instrument**")
-            st.write({k: v for k, v in fundamentals.items() if k in ("Name", "Sector", "Industry")})
-        with right:
-            st.markdown("**Valuation & Performance**")
-            st.write({k: v for k, v in fundamentals.items() if k not in ("Name", "Sector", "Industry")})
+        def display_value(value, key=""):
+            if value in (None, "N/A", ""):
+                return "N/A"
+            if key == "Market_Cap" and isinstance(value, (int, float)):
+                return f"${value / 1_000_000_000:.2f}B"
+            if key == "Dividend_Yield" and isinstance(value, (int, float)):
+                return f"{value * 100:.2f}%"
+            if isinstance(value, (int, float)):
+                return f"{value:,.2f}" if key != "Dividend_Rate" else f"${value:,.2f}"
+            return str(value)
+
+        identity_col, valuation_col = st.columns([1, 1.35], gap="large")
+
+        with identity_col:
+            st.markdown("### Instrument Profile")
+            profile_rows = [
+                ("Name", fundamentals.get("Name")),
+                ("Sector", fundamentals.get("Sector")),
+                ("Industry", fundamentals.get("Industry")),
+                ("Symbol", selected_symbol),
+            ]
+            for label, value in profile_rows:
+                c1, c2 = st.columns([1, 2])
+                c1.caption(label.upper())
+                c2.markdown(f"**{display_value(value)}**")
+
+        with valuation_col:
+            st.markdown("### Key Fundamentals")
+            card1, card2, card3 = st.columns(3)
+            card1.metric("Market Cap", display_value(fundamentals.get("Market_Cap"), "Market_Cap"))
+            card2.metric("P/E Ratio", display_value(fundamentals.get("PE_Ratio"), "PE_Ratio"))
+            card3.metric("EPS", display_value(fundamentals.get("EPS"), "EPS"))
+
+            fundamentals_table = pd.DataFrame([
+                {"Metric": "Forward P/E", "Value": display_value(fundamentals.get("Forward_PE"), "Forward_PE")},
+                {"Metric": "PEG Ratio", "Value": display_value(fundamentals.get("PEG_Ratio"), "PEG_Ratio")},
+                {"Metric": "Price / Book", "Value": display_value(fundamentals.get("Price_to_Book"), "Price_to_Book")},
+                {"Metric": "Dividend Yield", "Value": display_value(fundamentals.get("Dividend_Yield"), "Dividend_Yield")},
+                {"Metric": "Beta", "Value": display_value(fundamentals.get("Beta"), "Beta")},
+                {"Metric": "52-Week Range", "Value": f"{display_value(fundamentals.get('52_Week_Low'))} – {display_value(fundamentals.get('52_Week_High'))}"},
+            ])
+            st.dataframe(fundamentals_table, use_container_width=True, hide_index=True)
     else:
         st.info("Fundamentals are not available for this instrument.")
 

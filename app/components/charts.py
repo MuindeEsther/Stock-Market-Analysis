@@ -73,7 +73,10 @@ def plot_price_chart(data, ticker_name):
         title=f'{ticker_name} - Price with Technical Indicators',
         xaxis_title='Date',
         yaxis_title='Price (USD / KES)',
-        template='plotly_white',
+        template='plotly_dark',
+        paper_bgcolor='#101A2A',
+        plot_bgcolor='#101A2A',
+        font=dict(color='#C8D5E5'),
         hovermode='x unified',
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
@@ -90,10 +93,14 @@ def plot_volume_chart(data, ticker_name):
         y='Volume',
         title=f'{ticker_name} - Daily Trading Volume',
         labels={'Volume': 'Volume', 'Date': 'Date'},
-        template='plotly_white'
+        template='plotly_dark'
     )
     fig.update_layout(
         hovermode='x unified',
+        template='plotly_dark',
+        paper_bgcolor='#101A2A',
+        plot_bgcolor='#101A2A',
+        font=dict(color='#C8D5E5'),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     return fig
@@ -115,7 +122,10 @@ def plot_cumulative_returns(data_dict, title="Cumulative Returns Comparison (Ken
         title=title,
         yaxis_title='Cumulative Return (%)',
         xaxis_title='Date',
-        template='plotly_white',
+        template='plotly_dark',
+        paper_bgcolor='#101A2A',
+        plot_bgcolor='#101A2A',
+        font=dict(color='#C8D5E5'),
         hovermode='x unified',
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
@@ -154,7 +164,7 @@ def plot_momentum_indicators(data, ticker_name):
     if 'Stochastic_D' in data.columns:
         fig.add_trace(go.Scatter(x=data.index, y=data['Stochastic_D'], name='%D', line=dict(color='orange')), row=3, col=1)
 
-    fig.update_layout(title=f"{ticker_name} - Momentum Indicators", template='plotly_white', hovermode='x unified')
+    fig.update_layout(title=f"{ticker_name} - Momentum Indicators", template='plotly_dark', paper_bgcolor='#101A2A', plot_bgcolor='#101A2A', font=dict(color='#C8D5E5'), hovermode='x unified')
     fig.update_yaxes(title_text="RSI", range=[0, 100], row=1, col=1)
     fig.update_yaxes(title_text="MACD", row=2, col=1)
     fig.update_yaxes(title_text="%", range=[0, 100], row=3, col=1)
@@ -175,7 +185,7 @@ def plot_correlation_heatmap(corr_matrix):
         zmax=1
     )
     fig.update_layout(
-        template='plotly_white',
+        template='plotly_dark',
         hovermode='closest'
     )
     return fig
