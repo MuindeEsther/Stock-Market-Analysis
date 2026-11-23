@@ -151,7 +151,7 @@ with overview_tab:
             if key == "Market_Cap" and isinstance(value, (int, float)):
                 return f"${value / 1_000_000_000:.2f}B"
             if key == "Dividend_Yield" and isinstance(value, (int, float)):
-                return f"{value * 100:.2f}%"
+                return f"{value:.2f}%" if value < 1 else f"{value:.2f}%"
             if isinstance(value, (int, float)):
                 return f"{value:,.2f}" if key != "Dividend_Rate" else f"${value:,.2f}"
             return str(value)

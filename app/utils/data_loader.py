@@ -68,26 +68,54 @@ def get_fundamentals(ticker):
     """
     try:
         stock = yf.Ticker(ticker)
-        info = stock.info
-        
+        info = stock.info or {}
+
+        def first_value(keys):
+            for key in keys:
+                value = info.get(key)
+                if value not in (None, "", "N/A"):
+                    return value
+            return None
+
+        try:
+            fast = stock.fast_info
+        except Exception:
+            fast = {}
+
+        def fast_value(key):
+            try:
+                return fast.get(key)
+            except Exception:
+                return None
+
+        year_data = yf.download(ticker, period="1y", interval="1d", progress=False)
+        if isinstance(year_data.columns, pd.MultiIndex):
+            year_data.columns = year_data.columns.get_level_values(0)
+
+        week_high = first_value(["fiftyTwoWeekHigh"])
+        week_low = first_value(["fiftyTwoWeekLow"])
+        if (week_high is None or week_low is None) and year_data is not None and not year_data.empty:
+            week_high = week_high or float(year_data["High"].max())
+            week_low = week_low or float(year_data["Low"].min())
+
         fundamentals = {
-            'Name': info.get('longName', 'N/A'),
-            'Sector': info.get('sector', 'N/A'),
-            'Industry': info.get('industry', 'N/A'),
-            'Market_Cap': info.get('marketCap'),
-            'PE_Ratio': info.get('trailingPE'),
-            'Forward_PE': info.get('forwardPE'),
-            'PEG_Ratio': info.get('pegRatio'),
-            'Price_to_Book': info.get('priceToBook'),
-            'Dividend_Yield': info.get('dividendYield'),
-            'Dividend_Rate': info.get('dividendRate'),
-            'Beta': info.get('beta'),
-            'EPS': info.get('trailingEps'),
-            '52_Week_High': info.get('fiftyTwoWeekHigh'),
-            '52_Week_Low': info.get('fiftyTwoWeekLow'),
-            'Average_Volume': info.get('averageVolume'),
-            'Profit_Margins': info.get('profitMargins'),
-            'Revenue_Growth': info.get('revenueGrowth')
+            'Name': first_value(["longName", "shortName", "name"]) or ticker,
+            'Sector': first_value(["sector", "category"]) or "N/A",
+            'Industry': first_value(["industry", "industryDisp"]) or "N/A",
+            'Market_Cap': first_value(["marketCap", "market_cap"]) or fast_value("market_cap"),
+            'PE_Ratio': first_value(["trailingPE", "trailing_pe"]),
+            'Forward_PE': first_value(["forwardPE", "forward_pe"]),
+            'PEG_Ratio': first_value(["pegRatio"]),
+            'Price_to_Book': first_value(["priceToBook", "price_to_book"]),
+            'Dividend_Yield': first_value(["dividendYield", "yield"]),
+            'Dividend_Rate': first_value(["dividendRate"]),
+            'Beta': first_value(["beta"]),
+            'EPS': first_value(["trailingEps", "epsTrailingTwelveMonths"]),
+            '52_Week_High': week_high,
+            '52_Week_Low': week_low,
+            'Average_Volume': first_value(["averageVolume", "averageVolume10days"]),
+            'Profit_Margins': first_value(["profitMargins"]),
+            'Revenue_Growth': first_value(["revenueGrowth"])
         }
         
         logger.info(f"Successfully fetched fundamentals for {ticker}")
