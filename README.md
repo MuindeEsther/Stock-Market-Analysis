@@ -1,4 +1,9 @@
 # Stock-Market-Analysis
+
+## 🌐 Live Dashboard
+
+[Open the Global & Kenyan Market Dashboard](https://stock-market-analysis-7kgxyg2vnibsm56bf4xz6w.streamlit.app/)
+
 Streamlit dashboard for real-time stock market visualization using Python + yfinance.
 
 # 📈 Real-Time Global Market Intelligence Dashboard  
