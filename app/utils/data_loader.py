@@ -118,11 +118,19 @@ def get_fundamentals(ticker):
 
         forward_pe = first_value(["forwardPE", "forward_pe"])
 
-        week_high = first_value(["fiftyTwoWeekHigh"]) or fast_value("year_high")
+        week_high = first_value(["fiftyTwoWeekHigh"] ) or fast_value("year_high")
         week_low = first_value(["fiftyTwoWeekLow"]) or fast_value("year_low")
-        if (week_high is None or week_low is None) and year_data is not None and not year_data.empty:
-            week_high = week_high or float(year_data["High"].max())
-            week_low = week_low or float(year_data["Low"].min())
+
+        if week_high is None or week_low is None:
+            try:
+                year_data = yf.download(ticker, period="1y", interval="1d", progress=False)
+                if isinstance(year_data.columns, pd.MultiIndex):
+                    year_data.columns = year_data.columns.get_level_values(0)
+                if not year_data.empty:
+                    week_high = week_high or float(year_data["High"].dropna().max())
+                    week_low = week_low or float(year_data["Low"].dropna().min())
+            except Exception:
+                year_data = pd.DataFrame()
 
         fundamentals = {
             'Name': first_value(["longName", "shortName", "name"]) or ticker,
